@@ -1,5 +1,6 @@
 app.controller('indexController',['$scope', 'indexFactory', ($scope, indexFactory) =>{
     $scope.messages = [];
+    $scope.players = { };
     $scope.init = () => {
         const username = prompt('Please enter username');
         if (username)
@@ -26,9 +27,14 @@ app.controller('indexController',['$scope', 'indexFactory', ($scope, indexFactor
                         username: data.username
                     };
                     $scope.messages.push(messageData);
+                    $scope.players[data.id] = data;
                     $scope.$apply();
                     console.log(data);
 
+                });
+                socket.on('initPlayers', (players) => {
+                    $scope.players = players;
+                    $scope.$apply();
                 });
                 socket.on('disUser', (data) => {
                     const messageData = {
@@ -39,11 +45,29 @@ app.controller('indexController',['$scope', 'indexFactory', ($scope, indexFactor
                         username: data.username
                     };
                     $scope.messages.push(messageData);
+                    delete $scope.players[data.id]
+
                     $scope.$apply();
                     console.log(data);
+                });
+                socket.on('animate', (data) => {
+                    $('#' + data.socketId).animate({"left":data.x,"top": data.y});
                 })
+                $scope.onClickPlayer = ($event) => {
+                    let animate = false;
+                    if (!animate){
+                        let x = $event.offsetX;
+                        let y = $event.offsetY;
+                        socket.emit('animate', {x, y});
+                        animate = true;
+                        $('#' + socket.id).animate({"left":x,"top": y}, () => {
+                            animate = false;
+                        });
+                    }
+
+                }
             }).catch((err) => {
             console.log(err);
-        })
+        });
     }
 }]);
